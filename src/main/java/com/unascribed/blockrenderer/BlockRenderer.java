@@ -14,10 +14,12 @@ import java.util.Set;
 import javax.imageio.ImageIO;
 
 import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.client.util.InputMappings.Input;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.input.Keyboard;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -26,12 +28,14 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+
+import net.java.games.input.Component.Identifier.Key;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiIngameMenu;
-import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
@@ -45,24 +49,27 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent.Phase;
+import net.minecraftforge.event.TickEvent.RenderTickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventHandler;
-import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
-import net.minecraftforge.fml.common.gameevent.TickEvent.RenderTickEvent;
+//import net.minecraftforge.fml.common.Mod.EventHandler;
+//import net.minecraftforge.fml.common.Mod.Instance;
+//import net.minecraftforge.fml.common.eventhandler.EventPriority;
+//import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
+//import net.minecraftforge.fml.common.gameevent.TickEvent.RenderTickEvent;
 
-@Mod(modid=BlockRenderer.MODID,name=BlockRenderer.NAME,version=BlockRenderer.VERSION,acceptableRemoteVersions="*",acceptableSaveVersions="*",clientSideOnly=true)
+//@Mod(modid=BlockRenderer.MODID,name=BlockRenderer.NAME,version=BlockRenderer.VERSION,acceptableRemoteVersions="*",acceptableSaveVersions="*",clientSideOnly=true)
+@Mod(BlockRenderer.MODID)
 public class BlockRenderer {
 	public static final String MODID = "blockrenderer";
 	public static final String NAME = "BlockRenderer";
 	public static final String VERSION = "1.0.0";
 	
-	@Instance
-	public static BlockRenderer inst;
+	/*@Instance
+	public static BlockRenderer inst;*/
 	
 	protected KeyBinding bind;
 	protected boolean down = false;
@@ -72,9 +79,9 @@ public class BlockRenderer {
 	
 	protected final Logger log = LogManager.getLogger("BlockRenderer");
 	
-	@EventHandler
-	public void onPreInit(FMLPreInitializationEvent e) {
-		bind = new KeyBinding("key.render", Keyboard.KEY_GRAVE, "key.categories.blockrenderer");
+	public BlockRenderer() {
+		//bind = new KeyBinding("key.render", Keyboard.KEY_GRAVE, "key.categories.blockrenderer");
+		bind = new KeyBinding("key.render", GLFW.GLFW_KEY_GRAVE_ACCENT, "key.categories.blockrenderer");
 		ClientRegistry.registerKeyBinding(bind);
 		MinecraftForge.EVENT_BUS.register(this);
 	}
@@ -93,16 +100,17 @@ public class BlockRenderer {
 				pendingBulkRender = null;
 			}
 			// XXX is this really neccessary? I forget why I made it unwrap the binding...
-			int code = bind.getKeyCode();
-			if (code > 256) {
+			/*Input key = bind.getKey();
+			if (key.getKeyCode() > 256) {
 				return;
-			}
-			if (Keyboard.isKeyDown(code)) {
+			}*/
+			
+			if (bind.isKeyDown()) {
 				if (!down) {
 					down = true;
-					Minecraft mc = Minecraft.getMinecraft();
+					Minecraft mc = Minecraft.getInstance();
 					Slot hovered = null;
-					GuiScreen currentScreen = mc.currentScreen;
+					Screen currentScreen = mc.currentScreen;
 					if (currentScreen instanceof GuiContainer) {
 						int w = currentScreen.width;
 						int h = currentScreen.height;
