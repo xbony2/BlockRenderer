@@ -1,93 +1,77 @@
 buildscript {
-	repositories {
-		mavenCentral()
-		jcenter()
-		maven {
-			name = "forge"
-			url = "http://files.minecraftforge.net/maven"
-		}
-		maven {
-			name = "sonatype"
-			url = "https://oss.sonatype.org/content/repositories/snapshots/"
-		}
-	}
-	dependencies {
-		classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-		classpath 'me.tatarka:gradle-retrolambda:3.2.0'
-	}
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    }
 }
 
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'me.tatarka.retrolambda'
-apply plugin: 'maven'
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
 
-group = "com.unascribed"
+version = blockRendererBuild
+group = 'com.unascribed' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "BlockRenderer"
-version = "1.0.0"
+sourceCompatibility = JavaVersion.VERSION_1_8
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+minecraft {
+    mappings channel: 'snapshot', version: "$mappingsVersion"
+    
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            workingDirectory project.file('run')
 
-retrolambda {
-	javaVersion JavaVersion.VERSION_1_6
-	defaultMethods true
-}
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN'
 
-repositories {
-	maven {
-		name = 'sonatype-nexus'
-		url = 'https://oss.sonatype.org/content/repositories/public/'
-	}
-}
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
 
-configurations {
-	deploy
-	noEclipse
-	compile.extendsFrom noEclipse
-}
+            mods {
+                BlockRenderer {
+                    source sourceSets.main
+                }
+            }
+        }
 
-eclipse {
-	classpath {
-		minusConfigurations += [ configurations.noEclipse ]
-	}
+        server {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN' //REGISTRIES,REGISTRYDUMP are irrelevant for us
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                BlockRenderer {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
 }
 
 dependencies {
-	deploy 'org.apache.maven.wagon:wagon-ssh:2.10'
+    minecraft "net.minecraftforge:forge:$forgeVersion"
 }
 
+// Example for how to get properties into the manifest for reading by the runtime..
 jar {
-	manifest {
-		attributes (
-			'FMLAT': 'blockrenderer_at.cfg'
-		)
-	}
-}
-
-minecraft {
-	version = "1.12-14.21.0.2342"
-	mappings = "snapshot_20170621"
-
-	runDir = "eclipse"
-
-	makeObfSourceJar = false
-}
-
-processResources {
-	// this will ensure that this task is redone when the versions change.
-	inputs.property "version", project.version
-	inputs.property "mcversion", project.minecraft.version
-
-	// replace stuff in mcmod.info, nothing else
-	from(sourceSets.main.resources.srcDirs) {
-		include 'mcmod.info'
-
-		// replace version and mcversion
-		expand 'version':project.version, 'mcversion':project.minecraft.version
-	}
-
-	// copy everything else, thats not the mcmod.info
-	from(sourceSets.main.resources.srcDirs) {
-		exclude 'mcmod.info'
-	}
+    manifest {
+        attributes([
+            "Specification-Title": "BlockRenderer",
+            "Specification-Vendor": "Xbony2",
+            "Specification-Version": "1", // We are version 1 of ourselves
+            "Implementation-Title": project.name,
+            "Implementation-Version": "$version",
+            "Implementation-Vendor": "Xbony2",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
 }
