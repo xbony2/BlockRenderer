@@ -5,36 +5,47 @@ import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.text.ITextComponent;
 
 /**
- * Static versions of Gui and GuiScreen utility methods.
+ * Static versions of Gui and Screen utility methods.
  *
  */
 public class Rendering {
-	private static class DummyGui extends GuiScreen {
+	private static class DummyGui extends Screen {
+		protected DummyGui(ITextComponent titleIn){
+			super(titleIn);
+			
+		}
+		
 		@Override
 		public void drawGradientRect(int left, int top, int right, int bottom, int startColor, int endColor) {
 			super.drawGradientRect(left, top, right, bottom, startColor, endColor);
 		}
+		
 		@Override
 		public void drawHorizontalLine(int startX, int endX, int y, int color) {
 			super.drawHorizontalLine(startX, endX, y, color);
 		}
+		
 		@Override
 		public void drawVerticalLine(int x, int startY, int endY, int color) {
 			super.drawVerticalLine(x, startY, endY, color);
 		}
+		
 		@Override
 		public void drawHoveringText(List<String> textLines, int x, int y) {
 			super.drawHoveringText(textLines, x, y);
 		}
+		
 		@Override
 		public void drawHoveringText(List<String> textLines, int x, int y, FontRenderer font) {
 			super.drawHoveringText(textLines, x, y, font);
 		}
+		
 		@Override
 		public void renderToolTip(ItemStack stack, int x, int y) {
 			super.renderToolTip(stack, x, y);
@@ -105,9 +116,6 @@ public class Rendering {
 		GUI.setWorldAndResolution(Minecraft.getMinecraft(), width, height);
 		GUI.drawBackground(0);
 	}
-	
-	
-	
 	
 	private Rendering() {}
 }

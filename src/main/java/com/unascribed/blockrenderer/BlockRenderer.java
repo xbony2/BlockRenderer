@@ -36,11 +36,12 @@ import net.minecraft.client.gui.GuiIngameMenu;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.inventory.Slot;
+import net.minecraft.inventory.container.Slot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
@@ -48,6 +49,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent.Phase;
 import net.minecraftforge.event.TickEvent.RenderTickEvent;
@@ -55,6 +57,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 //import net.minecraftforge.fml.common.Mod.EventHandler;
 //import net.minecraftforge.fml.common.Mod.Instance;
 //import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -63,6 +66,7 @@ import net.minecraftforge.fml.common.Mod;
 
 //@Mod(modid=BlockRenderer.MODID,name=BlockRenderer.NAME,version=BlockRenderer.VERSION,acceptableRemoteVersions="*",acceptableSaveVersions="*",clientSideOnly=true)
 @Mod(BlockRenderer.MODID)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class BlockRenderer {
 	public static final String MODID = "blockrenderer";
 	public static final String NAME = "BlockRenderer";
@@ -111,28 +115,30 @@ public class BlockRenderer {
 					Minecraft mc = Minecraft.getInstance();
 					Slot hovered = null;
 					Screen currentScreen = mc.currentScreen;
-					if (currentScreen instanceof GuiContainer) {
-						int w = currentScreen.width;
+					if (currentScreen instanceof ContainerScreen) {
+						/*int w = currentScreen.width;
 						int h = currentScreen.height;
 						final int x = Mouse.getX() * w / mc.displayWidth;
 						// OpenGL's Y-zero is at the *bottom* of the window.
 						// Minecraft's Y-zero is at the top. So, we need to flip it.
 						final int y = h - Mouse.getY() * h / mc.displayHeight - 1;
-						hovered = ((GuiContainer)currentScreen).getSlotAtPosition(x, y);
+						hovered = ((ContainerScreen)currentScreen).getSlotAtPosition(x, y);*/
+						hovered = ((ContainerScreen)currentScreen).getSlotUnderMouse();
 					}
-					if (GuiScreen.isCtrlKeyDown()) {
+					
+					if (Screen.hasControlDown()) {
 						String modid = null;
 						if (hovered != null && hovered.getHasStack()) {
 							modid = Item.REGISTRY.getNameForObject(hovered.getStack().getItem()).getResourceDomain();
 						}
-						mc.displayGuiScreen(new GuiEnterModId(mc.currentScreen, modid));
+						mc.displayGuiScreen(new GuiEnterModId(null, mc.currentScreen, modid)); // TODO
 					} else if (currentScreen instanceof GuiContainer) {
 						if (hovered != null) {
 							ItemStack is = hovered.getStack();
 							if (is != null) {
 								int size = 512;
 								if (GuiScreen.isShiftKeyDown()) {
-									size = 16*new ScaledResolution(mc).getScaleFactor();
+									size = 16 * new ScaledResolution(mc).getScaleFactor();
 								}
 								setUpRenderState(size);
 								mc.ingameGUI.getChatGUI().printChatMessage(new TextComponentString(render(is, new File("renders"), true)));
@@ -154,7 +160,7 @@ public class BlockRenderer {
 	}
 
 	private void bulkRender(String modidSpec, int size) {
-		Minecraft.getMinecraft().displayGuiScreen(new GuiIngameMenu());
+		Minecraft.getInstance().displayGuiScreen(new GuiIngameMenu());
 		Set<String> modids = Sets.newHashSet();
 		for (String str : modidSpec.split(",")) {
 			modids.add(str.trim());
@@ -206,10 +212,10 @@ public class BlockRenderer {
 	}
 
 	private void renderLoading(String title, String subtitle, ItemStack is, float progress) {
-		Minecraft mc = Minecraft.getMinecraft();
+		Minecraft mc = Minecraft.getInstance();
 		mc.getFramebuffer().unbindFramebuffer();
 		GlStateManager.pushMatrix();
-			ScaledResolution res = new ScaledResolution(Minecraft.getMinecraft());
+			ScaledResolution res = new ScaledResolution(Minecraft.getInstance());
 			mc.entityRenderer.setupOverlayRendering();
 			// Draw the dirt background and status text...
 			Rendering.drawBackground(res.getScaledWidth(), res.getScaledHeight());
@@ -264,7 +270,7 @@ public class BlockRenderer {
 	}
 
 	private String render(ItemStack is, File folder, boolean includeDateInFilename) {
-		Minecraft mc = Minecraft.getMinecraft();
+		Minecraft mc = Minecraft.getInstance();
 		String filename = (includeDateInFilename ? dateFormat.format(new Date())+"_" : "")+sanitize(is.getDisplayName());
 		GlStateManager.pushMatrix();
 			GlStateManager.clearColor(0, 0, 0, 0);
@@ -301,7 +307,7 @@ public class BlockRenderer {
 	private float oldZLevel;
 	
 	private void setUpRenderState(int desiredSize) {
-		Minecraft mc = Minecraft.getMinecraft();
+		Minecraft mc = Minecraft.getInstance();
 		ScaledResolution res = new ScaledResolution(mc);
 		/*
 		 * As we render to the back-buffer, we need to cap our render size
@@ -343,7 +349,7 @@ public class BlockRenderer {
 		GlStateManager.disableDepth();
 		GlStateManager.disableBlend();
 		
-		Minecraft.getMinecraft().getRenderItem().zLevel = oldZLevel;
+		Minecraft.getInstance().getRenderItem().zLevel = oldZLevel;
 	}
 	
 	private String sanitize(String str) {
@@ -360,7 +366,7 @@ public class BlockRenderer {
 		// Allocate a native data array to fit our pixels
 		ByteBuffer buf = BufferUtils.createByteBuffer(width * height * 4);
 		// And finally read the pixel data from the GPU...
-		GL11.glReadPixels(0, Minecraft.getMinecraft().displayHeight-height, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buf);
+		GL11.glReadPixels(0, Minecraft.getInstance().displayHeight-height, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buf);
 		// ...and turn it into a Java object we can do things to.
 		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		int[] pixels = new int[width*height];
