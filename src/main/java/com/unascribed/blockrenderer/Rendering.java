@@ -21,7 +21,8 @@ public class Rendering {
 			
 		}
 		
-		@Override
+		// This just calls the superclass so I don't think any of these are needed?
+		/*@Override
 		public void drawGradientRect(int left, int top, int right, int bottom, int startColor, int endColor) {
 			super.drawGradientRect(left, top, right, bottom, startColor, endColor);
 		}
@@ -49,7 +50,7 @@ public class Rendering {
 		@Override
 		public void renderToolTip(ItemStack stack, int x, int y) {
 			super.renderToolTip(stack, x, y);
-		}
+		}*/
 	}
 
 
@@ -89,15 +90,15 @@ public class Rendering {
 	}
 	
 	public static void drawScaledCustomSizeModalRect(int x, int y, float u, float v, int uWidth, int vHeight, int width, int height, float tileWidth, float tileHeight) {
-		Gui.drawScaledCustomSizeModalRect(x, y, u, v, uWidth, vHeight, width, height, tileWidth, tileHeight);
+		GUI.drawScaledCustomSizeModalRect(x, y, u, v, uWidth, vHeight, width, height, tileWidth, tileHeight);
 	}
 	
 	public static void drawModalRectWithCustomSizedTexture(int x, int y, float u, float v, int width, int height, float textureWidth, float textureHeight) {
-		Gui.drawModalRectWithCustomSizedTexture(x, y, u, v, width, height, textureWidth, textureHeight);
+		GUI.drawModalRectWithCustomSizedTexture(x, y, u, v, width, height, textureWidth, textureHeight);
 	}
 	
 	public static void drawRect(int left, int top, int right, int bottom, int color) {
-		Gui.drawRect(left, top, right, bottom, color);
+		GUI.drawRect(left, top, right, bottom, color);
 	}
 	
 	public static void drawHoveringText(List<String> textLines, int x, int y) {
@@ -113,8 +114,9 @@ public class Rendering {
 	}
 	
 	public static void drawBackground(int width, int height) {
-		GUI.setWorldAndResolution(Minecraft.getMinecraft(), width, height);
-		GUI.drawBackground(0);
+		//GUI.setWorldAndResolution(Minecraft.getInstance(), width, height);
+		GUI.resize(Minecraft.getInstance(), width, height);
+		GUI.renderBackground();
 	}
 	
 	private Rendering() {}

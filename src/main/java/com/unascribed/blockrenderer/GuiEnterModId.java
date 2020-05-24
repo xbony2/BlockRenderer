@@ -35,19 +35,25 @@ public class GuiEnterModId extends Screen implements GuiResponder {
 		
 		float oldSize = (size == null ? 512 : size.getSliderValue());
 		
-		text = new GuiTextField(0, minecraft.fontRenderer, width/2-100, height/6+50, 200, 20);
+		
+		text = new GuiTextField(0, minecraft.fontRenderer, width/2 - 100, height/6 + 50, 200, 20);
 		text.setText(oldText);
 		
-		buttonList.add(new Button(2, width/2-100, height/6+120, 98, 20, I18n.format("gui.cancel")));
-		GuiButton render = new GuiButton(1, width/2+2, height/6+120, 98, 20, I18n.format("gui.render"));
-		buttonList.add(render);
+		//buttonList.add(new Button(2, width/2 - 100, height/6 + 120, 98, 20, I18n.format("gui.cancel")));
+		addButton(new Button(2, width/2 - 100, height/6 + 120, 98, 20, I18n.format("gui.cancel")));
+		
+		Button render = new Button(1, width/2 + 2, height/6 + 120, 98, 20, I18n.format("gui.render"));
+		//buttonList.add(render);
+		addButton(render);
 		int minSize = Math.min(minecraft.displayWidth, minecraft.displayHeight);
-		size = new OptionSlider(this, 3, width/2-100, height/6+80, I18n.format("gui.rendersize"), 16, Math.min(2048, minSize), Math.min(oldSize, minSize), (id, name, value) -> {
+		size = new OptionSlider(this, 3, width/2 - 100, height/6 + 80, I18n.format("gui.rendersize"), 16, Math.min(2048, minSize), Math.min(oldSize, minSize), (id, name, value) -> {
 			String px = Integer.toString(round(value));
-			return name+": "+px+"x"+px;
+			return name + ": "+px + "x" + px;
 		});
+		
 		size.setWidth(200);
-		buttonList.add(size);
+		//buttonList.add(size);
+		addButton(size);
 		
 		text.setFocused(true);
 		text.setCanLoseFocus(false);
@@ -100,7 +106,7 @@ public class GuiEnterModId extends Screen implements GuiResponder {
 	}
 
 	@Override
-	protected void actionPerformed(GuiButton button) throws IOException {
+	protected void actionPerformed(Button button) throws IOException {
 		super.actionPerformed(button);
 		if (button.id == 1) {
 			if (minecraft.world != null) {

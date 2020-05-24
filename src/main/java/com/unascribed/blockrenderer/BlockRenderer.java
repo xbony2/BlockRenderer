@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -30,6 +29,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import net.java.games.input.Component.Identifier.Key;
+import net.java.games.input.Keyboard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiIngameMenu;
@@ -46,9 +46,12 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent.Phase;
@@ -63,6 +66,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 //import net.minecraftforge.fml.common.eventhandler.EventPriority;
 //import net.minecraftforge.fml.common.gameevent.TickEvent.Phase;
 //import net.minecraftforge.fml.common.gameevent.TickEvent.RenderTickEvent;
+import net.minecraftforge.registries.ForgeRegistry;
 
 //@Mod(modid=BlockRenderer.MODID,name=BlockRenderer.NAME,version=BlockRenderer.VERSION,acceptableRemoteVersions="*",acceptableSaveVersions="*",clientSideOnly=true)
 @Mod(BlockRenderer.MODID)
@@ -129,7 +133,8 @@ public class BlockRenderer {
 					if (Screen.hasControlDown()) {
 						String modid = null;
 						if (hovered != null && hovered.getHasStack()) {
-							modid = Item.REGISTRY.getNameForObject(hovered.getStack().getItem()).getResourceDomain();
+							modid = Item.REGISTRIES.getNameForObject(hovered.getStack().getItem()).getResourceDomain();
+							//modid = ForgeRegistry.REGISTRIES.getNameForObject(hovered.getStack().getItem()).getResourceDomain();
 						}
 						mc.displayGuiScreen(new GuiEnterModId(null, mc.currentScreen, modid)); // TODO
 					} else if (currentScreen instanceof GuiContainer) {
@@ -137,20 +142,22 @@ public class BlockRenderer {
 							ItemStack is = hovered.getStack();
 							if (is != null) {
 								int size = 512;
-								if (GuiScreen.isShiftKeyDown()) {
+								if (Screen.hasShiftDown()) {
 									size = 16 * new ScaledResolution(mc).getScaleFactor();
 								}
 								setUpRenderState(size);
-								mc.ingameGUI.getChatGUI().printChatMessage(new TextComponentString(render(is, new File("renders"), true)));
+								//mc.ingameGUI.getChatGUI().printChatMessage(new TextComponentString(render(is, new File("renders"), true)));
+								mc.ingameGUI.getChatGUI().printChatMessage(new StringTextComponent(render(is, new File("renders"), true)));
 								tearDownRenderState();
 							} else {
-								mc.ingameGUI.getChatGUI().printChatMessage(new TextComponentTranslation("msg.slot.empty"));
+								//mc.ingameGUI.getChatGUI().printChatMessage(new TextComponentTranslation("msg.slot.empty"));
+								mc.ingameGUI.getChatGUI().printChatMessage(new TranslationTextComponent("msg.slot.empty"));
 							}
 						} else {
-							mc.ingameGUI.getChatGUI().printChatMessage(new TextComponentTranslation("msg.slot.absent"));
+							mc.ingameGUI.getChatGUI().printChatMessage(new TranslationTextComponent("msg.slot.absent"));
 						}
 					} else {
-						mc.ingameGUI.getChatGUI().printChatMessage(new TextComponentTranslation("msg.notcontainer"));
+						mc.ingameGUI.getChatGUI().printChatMessage(new TranslationTextComponent("msg.notcontainer"));
 					}
 				}
 			} else {
@@ -168,24 +175,24 @@ public class BlockRenderer {
 		List<ItemStack> toRender = Lists.newArrayList();
 		NonNullList<ItemStack> li = NonNullList.create();
 		int rendered = 0;
-		for (ResourceLocation resloc : Item.REGISTRY.getKeys()) {
+		for (ResourceLocation resloc : Item.REGISTRIES.getKeys()) {
 			if (resloc != null && modids.contains(resloc.getResourceDomain()) || modids.contains("*")) {
 				li.clear();
-				Item i = Item.REGISTRY.getObject(resloc);
+				Item i = Item.REGISTRIES.getObject(resloc);
 				try {
 					i.getSubItems(i.getCreativeTab(), li);
 				} catch (Throwable t) {
-					log.warn("Failed to get renderable items for "+resloc, t);
+					log.warn("Failed to get renderable items for " + resloc, t);
 				}
 				toRender.addAll(li);
 			}
 		}
-		File folder = new File("renders/"+dateFormat.format(new Date())+"_"+sanitize(modidSpec)+"/");
+		File folder = new File("renders/" + dateFormat.format(new Date()) + "_" + sanitize(modidSpec) + "/");
 		long lastUpdate = 0;
 		String joined = Joiner.on(", ").join(modids);
 		setUpRenderState(size);
 		for (ItemStack is : toRender) {
-			if (Keyboard.isKeyDown(Keyboard.KEY_ESCAPE))
+			if (Keyboard.isKeyDown(Key.ESCAPE))
 				break;
 			render(is, folder, false);
 			rendered++;
@@ -219,9 +226,9 @@ public class BlockRenderer {
 			mc.entityRenderer.setupOverlayRendering();
 			// Draw the dirt background and status text...
 			Rendering.drawBackground(res.getScaledWidth(), res.getScaledHeight());
-			Rendering.drawCenteredString(mc.fontRenderer, title, res.getScaledWidth()/2, res.getScaledHeight()/2-24, -1);
-			Rendering.drawRect(res.getScaledWidth()/2-50, res.getScaledHeight()/2-1, res.getScaledWidth()/2+50, res.getScaledHeight()/2+1, 0xFF001100);
-			Rendering.drawRect(res.getScaledWidth()/2-50, res.getScaledHeight()/2-1, (res.getScaledWidth()/2-50)+(int)(progress*100), res.getScaledHeight()/2+1, 0xFF55FF55);
+			Rendering.drawCenteredString(mc.fontRenderer, title, res.getScaledWidth() / 2, res.getScaledHeight()/2 - 24, -1);
+			Rendering.drawRect(res.getScaledWidth()/2 - 50, res.getScaledHeight()/2 - 1, res.getScaledWidth()/2 + 50, res.getScaledHeight()/2 + 1, 0xFF001100);
+			Rendering.drawRect(res.getScaledWidth()/2 - 50, res.getScaledHeight()/2 - 1, (res.getScaledWidth()/2 - 50) + (int)(progress * 100), res.getScaledHeight()/2 + 1, 0xFF55FF55);
 			GlStateManager.pushMatrix();
 				GlStateManager.scale(0.5f, 0.5f, 1);
 				Rendering.drawCenteredString(mc.fontRenderer, subtitle, res.getScaledWidth(), res.getScaledHeight()-20, -1);
@@ -233,7 +240,7 @@ public class BlockRenderer {
 						// This code is copied from the tooltip renderer, so we can properly center it.
 						for (int i = 0; i < list.size(); ++i) {
 							if (i == 0) {
-								list.set(i, is.getRarity().rarityColor + list.get(i));
+								list.set(i, is.getRarity().color + list.get(i));
 							} else {
 								list.set(i, TextFormatting.GRAY + list.get(i));
 							}
@@ -260,6 +267,7 @@ public class BlockRenderer {
 			GlStateManager.popMatrix();
 		GlStateManager.popMatrix();
 		mc.updateDisplay();
+		
 		/*
 		 * While OpenGL itself is double-buffered, Minecraft is actually *triple*-buffered.
 		 * This is to allow shaders to work, as shaders are only available in "modern" GL.
@@ -271,7 +279,8 @@ public class BlockRenderer {
 
 	private String render(ItemStack is, File folder, boolean includeDateInFilename) {
 		Minecraft mc = Minecraft.getInstance();
-		String filename = (includeDateInFilename ? dateFormat.format(new Date())+"_" : "")+sanitize(is.getDisplayName());
+		//String filename = (includeDateInFilename ? dateFormat.format(new Date()) + "_" : "") + sanitize(is.getDisplayName());
+		String filename = (includeDateInFilename ? dateFormat.format(new Date()) + "_" : "") + sanitize(is.getDisplayName().toString());
 		GlStateManager.pushMatrix();
 			GlStateManager.clearColor(0, 0, 0, 0);
 			GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
@@ -366,10 +375,10 @@ public class BlockRenderer {
 		// Allocate a native data array to fit our pixels
 		ByteBuffer buf = BufferUtils.createByteBuffer(width * height * 4);
 		// And finally read the pixel data from the GPU...
-		GL11.glReadPixels(0, Minecraft.getInstance().displayHeight-height, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buf);
+		GL11.glReadPixels(0, Minecraft.getInstance().displayHeight - height, width, height, GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buf);
 		// ...and turn it into a Java object we can do things to.
 		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		int[] pixels = new int[width*height];
+		int[] pixels = new int[width * height];
 		buf.asIntBuffer().get(pixels);
 		img.setRGB(0, 0, width, height, pixels, 0, width);
 		return img;
